@@ -17,7 +17,7 @@ namespace KMeansClusteringTest
 {
     public partial class Form1 : Form
     {
-        
+        private int k = 3;
         private List<ClusterPoint> ClusterPoints;
         private List<Centroid> Centroids;
         Random rand = new Random();
@@ -53,8 +53,12 @@ namespace KMeansClusteringTest
 
         private async Task RunKMeans()
         {
-            ClusterPoints = await Task.Run(() => KMeans(ClusterPoints, 20));
-            this.Invalidate(); // Force the form to repaint
+            foreach (var data in ClusterPoints)
+            {
+                data.ClusterID = 0;
+            }
+            ClusterPoints = await Task.Run(() => KMeans(ClusterPoints, k));
+            this.Invalidate();
         }
 
         // Paint-Event zum Zeichnen der Punkte
@@ -103,6 +107,27 @@ namespace KMeansClusteringTest
                     case 6:
                         PointBrush = Brushes.Orange;
                         break;
+                    case 7:
+                        PointBrush = Brushes.Cyan;
+                        break;
+                    case 8:
+                        PointBrush = Brushes.Magenta;
+                        break;
+                    case 9:
+                        PointBrush = Brushes.Brown;
+                        break;
+                    case 10:
+                        PointBrush = Brushes.Pink;
+                        break;
+                    case 11:
+                        PointBrush = Brushes.LightBlue;
+                        break;
+                    case 12:
+                        PointBrush = Brushes.LightGreen;
+                        break;
+                    case 13:
+                        PointBrush = Brushes.LightYellow;
+                        break;
                     case 0:
                     default:
                         PointBrush = Brushes.Gray; // Clusterless points as gray
@@ -118,6 +143,7 @@ namespace KMeansClusteringTest
 
         private List<ClusterPoint> KMeans(List<ClusterPoint> dataset, int k)
         {
+            Console.WriteLine("KMeans started");
             Centroids = new List<Centroid>();
             for (int i = 0; i < k; i++)
             {
@@ -162,7 +188,7 @@ namespace KMeansClusteringTest
                     centroid.recalculate(dataset);
                 }
             }
-
+            Console.WriteLine("KMeans finished");
             return dataset;
         }
 
@@ -189,5 +215,28 @@ namespace KMeansClusteringTest
         {
 
         }
+
+        private void textBox1_TextChanged(object sender, EventArgs e) { 
+        
+        }
+
+        private async void button1_Click(object sender, EventArgs e)
+        {
+            if (int.TryParse(textBox1.Text, out int newK) && newK > 0)
+            {
+                k = newK;
+                await RunKMeans();
+                this.BeginInvoke(new Action(() => this.Invalidate()));
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+
+        }
     }
+
+
+
 }
+
