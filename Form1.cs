@@ -8,45 +8,83 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
+using System.Globalization;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace KMeansClusteringTest
 {
     public partial class Form1 : Form
     {
-
-        private ClusterPoint[] ClusterPoints = new ClusterPoint[100];
-        private Centroid[] Centroids;
+        
+        private List<ClusterPoint> ClusterPoints;
+        private List<Centroid> Centroids;
         Random rand = new Random();
+
+        string filePath = "data.csv";
+        
+
         public Form1()
         {
             InitializeComponent();
-
-            // Initialisiere das Array mit zufälligen Punkten
-
-            for (int i = 0; i < ClusterPoints.Length; i++)
+            ClusterPoints = new List<ClusterPoint>(); // Initialize the list
+            using (var reader = new StreamReader(filePath))
+            using (var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
             {
-                // Zufällige X- und Y-Koordinaten im Bereich der Formgröße
-                ClusterPoints[i] = new ClusterPoint(new Point(rand.Next(0, this.Width), rand.Next(0, this.Height)),0);
+                HasHeaderRecord = true
+            }))
+            {
+                var culture = new CultureInfo("en-US");
+                var records = csv.GetRecords<dynamic>();
+                foreach (var record in records)
+                {
+                    // Use the specified culture to parse the values correctly
+                    float x = float.Parse(record.X, culture); 
+                    float y = float.Parse(record.Y, culture); 
+                    ClusterPoints.Add(new ClusterPoint(x, y, 0));
+                }
             }
-
-            // Sicherstellen, dass das Paint-Event abgerufen wird
+            
             this.Paint += new PaintEventHandler(Form1_Paint);
+            Task.Run(() => RunKMeans());
+
+        }
+
+        private async Task RunKMeans()
+        {
+            ClusterPoints = await Task.Run(() => KMeans(ClusterPoints, 20));
+            this.Invalidate(); // Force the form to repaint
         }
 
         // Paint-Event zum Zeichnen der Punkte
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            // Erhalte das Graphics-Objekt zum Zeichnen auf der Form
             Graphics g = e.Graphics;
-            
-            // Bürste für die Punkte (wir wählen Blau)
 
-            ClusterPoints = KMeans(ClusterPoints, 3);
-            // Zeichne jeden Punkt als kleinen Kreis (Ellipse)
+            if (ClusterPoints.Count == 0)
+                return;
+
+            float minX = ClusterPoints.Min(p => p.x);
+            float maxX = ClusterPoints.Max(p => p.x);
+            float minY = ClusterPoints.Min(p => p.y);
+            float maxY = ClusterPoints.Max(p => p.y);
+
+            float rangeX = maxX - minX;
+            float rangeY = maxY - minY;
+            if (rangeX == 0) rangeX = 1;
+            if (rangeY == 0) rangeY = 1;
+
+            float scaleX = (ClientSize.Width - 20) / rangeX;
+            float scaleY = (ClientSize.Height - 20) / rangeY;
+            Console.WriteLine($"minX: {minX}, maxX: {maxX}, rangeX: {rangeX}, scaleX: {scaleX}");
+            Console.WriteLine($"minY: {minY}, maxY: {maxY}, rangeY: {rangeY}, scaleY: {scaleY}");
+
             foreach (var data in ClusterPoints)
             {
                 Brush PointBrush = Brushes.Black;
-                switch (data.ClusterID) {
+                switch (data.ClusterID)
+                {
                     case 1:
                         PointBrush = Brushes.Red;
                         break;
@@ -56,60 +94,79 @@ namespace KMeansClusteringTest
                     case 3:
                         PointBrush = Brushes.Blue;
                         break;
+                    case 4:
+                        PointBrush = Brushes.Yellow;
+                        break;
+                    case 5:
+                        PointBrush = Brushes.Purple;
+                        break;
+                    case 6:
+                        PointBrush = Brushes.Orange;
+                        break;
                     case 0:
                     default:
-                        PointBrush = Brushes.Black;
+                        PointBrush = Brushes.Gray; // Clusterless points as gray
                         break;
                 }
-                
-                // Zeichne einen Punkt als kleinen Kreis (10x10 Pixel)
-                g.FillEllipse(PointBrush, data.x - 5, data.y - 5, 10, 10);
+
+                float normalizedX = (data.x - minX) * scaleX + 10;
+                float normalizedY = (data.y - minY) * scaleY + 10;
+
+                g.FillEllipse(PointBrush, normalizedX - 5, normalizedY - 5, 10, 10);
             }
         }
 
-        private ClusterPoint[] KMeans(ClusterPoint[] dataset, int k)
+        private List<ClusterPoint> KMeans(List<ClusterPoint> dataset, int k)
         {
-            Centroids = new Centroid[k];
-            for (int i = 1; i < k; i++) 
-            { 
-                int p = rand.Next(0, dataset.Length);
-                while(dataset[p].ClusterID != 0)
+            Centroids = new List<Centroid>();
+            for (int i = 0; i < k; i++)
+            {
+                int p = rand.Next(0, dataset.Count);
+                while (dataset[p].ClusterID != 0)
                 {
-                    p = rand.Next(0, dataset.Length);
+                    p = rand.Next(0, dataset.Count);
                 }
-                dataset[p].ClusterID = i;
-                Centroids[i] = new Centroid(dataset[i],i);
+                dataset[p].ClusterID = i + 1;
+                Centroids.Add(new Centroid(dataset[p], i + 1));
             }
-            foreach (var c in Centroids)
+
+            bool centroidsChanged = true;
+            while (centroidsChanged)
             {
-                c.recalculate(dataset);
-            }
-            while (!CheckDone(dataset))
-            {
+                centroidsChanged = false;
+
                 foreach (var data in dataset)
                 {
-                    if (data.ClusterID == 0)
-                    {
-                        Centroid near = Centroids[1];
-                        for (int i = 0; i < Centroids.Length; i++)
-                        {
-                            var data2 = Centroids[i];
+                    int nearestCentroidIndex = -1;
+                    float minDistance = float.MaxValue;
 
-                            if (getDistance(data, data2.p) < getDistance(data, Centroids[i].p))
-                            {
-                                near = data2;
-                            }
+                    for (int i = 0; i < Centroids.Count; i++)
+                    {
+                        var dist = getDistance(data, Centroids[i].p);
+                        if (dist < minDistance)
+                        {
+                            minDistance = dist;
+                            nearestCentroidIndex = i;
                         }
-                        data.ClusterID = near.ClusterID;
                     }
+
+                    if (data.ClusterID != Centroids[nearestCentroidIndex].ClusterID)
+                    {
+                        data.ClusterID = Centroids[nearestCentroidIndex].ClusterID;
+                        centroidsChanged = true;
+                    }
+                }
+
+                foreach (var centroid in Centroids)
+                {
+                    centroid.recalculate(dataset);
                 }
             }
 
-            
             return dataset;
         }
 
-        private bool CheckDone(ClusterPoint[] dataset)
+        private bool CheckDone(List<ClusterPoint> dataset)
         {
             foreach (var data in dataset)
             {
@@ -121,12 +178,13 @@ namespace KMeansClusteringTest
             return true;
         }
 
-        private int getDistance(ClusterPoint a, ClusterPoint b)
-        { 
-            int dx = b.Point.X - a.Point.X;
-            int dy = b.Point.Y - a.Point.Y;
-            return (int)Math.Sqrt(dx * dx + dy * dy);
-        }
+       private float getDistance(ClusterPoint a, ClusterPoint b) 
+{ 
+    float dx = b.x - a.x;
+    float dy = b.y - a.y;
+    return (float)Math.Sqrt(dx * dx + dy * dy); // Use float instead of int
+}
+
         private void Form1_Load(object sender, EventArgs e)
         {
 

@@ -9,21 +9,21 @@ namespace KMeansClusteringTest
 {
     internal class ClusterPoint
     {
-        public Point Point { get; set; }   // Der Punkt (Koordinaten)
-        public int ClusterID { get; set; } // Die ID des Clusters, zu dem der Punkt gehört
-        public int x { get; set; }
-        public int y { get; set; }
+        public int ClusterID { get; set; } 
+        public float x { get; set; }
+        public float y { get; set; }
 
         // Konstruktor
-        public ClusterPoint(Point p, int clusterID)
+        public ClusterPoint(float x, float y, int clusterID)
         {
-            this.Point = p;
+            this.x = x;
+            this.y = y;
             this.ClusterID = clusterID;
         }
 
-        public ClusterPoint setCluster(Point p, int clusterID)
+        public ClusterPoint setCluster(int clusterID)
         {
-            return new ClusterPoint(p, clusterID);
+            return new ClusterPoint(x,y, clusterID);
         }
     }
 }

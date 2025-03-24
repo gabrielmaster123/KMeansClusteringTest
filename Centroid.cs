@@ -9,29 +9,27 @@ namespace KMeansClusteringTest
 {
     internal class Centroid
     {
-        public ClusterPoint p { get; set; }   // Der Punkt (Koordinaten)
-        public int ClusterID { get; set; } // Die ID des Clusters, zu dem der Cluster gehört
-        public Centroid(ClusterPoint p, int clusterID)
+        public ClusterPoint p;
+        public int ClusterID;
+
+        public Centroid(ClusterPoint point, int clusterID)
         {
-            this.p = p;
-            this.ClusterID = clusterID;
+            p = point;
+            ClusterID = clusterID;
         }
 
-        public void recalculate(ClusterPoint[] dataset)
+        public void recalculate(List<ClusterPoint> dataset)
         {
-            int x = 0;
-            int y = 0;
-            int i = 0;
-            foreach (var data in dataset)
+            var pointsInCluster = dataset.Where(data => data.ClusterID == ClusterID).ToList();
+
+            if (pointsInCluster.Count > 0)
             {
-                if(data.ClusterID == ClusterID)
-                {
-                    x += data.x;
-                    y += data.y;
-                    i++;
-                }
+                float meanX = pointsInCluster.Average(p => p.x);
+                float meanY = pointsInCluster.Average(p => p.y);
+
+                p.x = meanX;
+                p.y = meanY;
             }
-            p = new ClusterPoint(new Point(x / i, y / i), ClusterID);
         }
     }
     
