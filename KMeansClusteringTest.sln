@@ -7,7 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KMeansClusteringTest", "KMe
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{327A2BCC-D8F0-443A-AD00-7168EE9CC7A6}"
 	ProjectSection(SolutionItems) = preProject
+		bin\Debug\customer_segmentation.csv = bin\Debug\customer_segmentation.csv
+		bin\Debug\data-final-clean.csv = bin\Debug\data-final-clean.csv
 		bin\Debug\data.csv = bin\Debug\data.csv
+		bin\Debug\Instagram visits clustering.csv = bin\Debug\Instagram visits clustering.csv
+		otherData.csv = otherData.csv
+		bin\Debug\taxi_fare\submission.csv = bin\Debug\taxi_fare\submission.csv
+		bin\Debug\taxi_fare\test.csv = bin\Debug\taxi_fare\test.csv
+		bin\Debug\taxi_fare\train.csv = bin\Debug\taxi_fare\train.csv
 	EndProjectSection
 EndProject
 Global

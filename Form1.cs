@@ -19,7 +19,7 @@ namespace KMeansClusteringTest
         private List<Centroid> Centroids;
         private Random rand = new Random();
 
-        string filePath = "data.csv";
+        string filePath = "otherData.csv";
 
         public Form1()
         {
