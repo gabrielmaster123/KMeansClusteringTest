@@ -131,7 +131,6 @@ namespace KMeansClusteringTest
             }
             Console.WriteLine("KMeans started");
             Centroids = new List<Centroid>();
-            // Initialize centroids by randomly selecting data points
             for (int i = 0; i < k; i++)
             {
                 int p = rand.Next(0, dataset.Count);
